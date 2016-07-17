@@ -3,7 +3,7 @@ title: "cranLogs"
 author: "myTinyShinys"
 output: 
   flexdashboard::flex_dashboard:
-    
+    css: styles.css
     theme: united
     orientation: rows
     social: [ menu ]
@@ -15,10 +15,7 @@ runtime: shiny
 library(flexdashboard)
 library(plotly)
 library(readr)
-#library(lubridate)
-#library(Lahman) - based on 2014 data so replaced byloading relevant files
-#library(XML)
-#library(stringr)
+
 library(shiny)
 library(plotly)
 library(feather)
@@ -46,11 +43,32 @@ Inputs {.sidebar data-width=250}
 ``` {r}
 includeMarkdown("info.md")
 hr()
-selectInput("packages_Ind","Select",choices=packageChoice,selected="dplyr", multiple=FALSE, selectize=FALSE, size = 10)
+selectInput("packages_Ind","Select (default dplyr)",choices=packageChoice,selected="dplyr", multiple=FALSE, selectize=FALSE, size = 10)
 
 ```
 
-Column {data-width=650}
+Row
+-----------------------------------------------------------------------
+
+### Package 
+
+```{r}
+
+renderValueBox({
+
+val <- paste0(input$packages_Ind, " - ",pkgs[pkgs$name==input$packages_Ind,]$description)
+
+valueBox(value = val,
+icon = "fa-book")
+
+})
+
+
+
+```
+
+
+Row
 -----------------------------------------------------------------------
 
 ### Daily Downloads 
@@ -65,9 +83,9 @@ renderPlotly({
   x = date,
   y = count,
   mode = "markers",
-  color = "#00ffed",
-  hoverinfo = "text",
-  text = paste0(date, "<br> Rank: ", rank, "<br> Count: ", count)
+   marker = list( color="#007bff", size=3),
+    hoverinfo = "text",
+  text = paste0(date, "<br> Count: ", count, "<br> Rank: ", rank)
   )  %>%
  
   layout(hovermode = "closest",
@@ -80,47 +98,72 @@ renderPlotly({
 
 ```
 
-Column {data-width=350}
------------------------------------------------------------------------
-
-### Package
-
-```{r}
-
-renderText({
-  
-paste0(input$packages_Ind," - ",pkgs[pkgs$name==input$packages_Ind,]$description)
-  
-})
-
-```
 
 ### Rank
 
 ```{r}
 
 renderPlotly({
-df %>% 
-  filter(package %in% input$packages_Ind&count>0) %>% 
-  plot_ly(x=date,y=rank,mode="markers", color=package)  %>% 
-    layout(
-           xaxis=list(title=""),
-           yaxis=list(autorange="reversed",title="")
-           
-    ) 
-})
+  df %>%
+  filter(package == input$packages_Ind & count > 0) %>%
+  plot_ly(
+  x = date,
+  y = rank,
+  mode = "markers",
+  marker = list( color="#ff9000", size=3),
+   hoverinfo = "text",
+  text = paste0(date, "<br> Rank: ", rank, "<br> Count: ", count)
+  )  %>%
+  layout(xaxis = list(title = ""),
+  yaxis = list(autorange = "reversed", title = ""))
+  })
 
-# renderValueBox({
-#   
-# req(glanceData())
-# 
-# valueBox(value = glanceData()$seasons,
-# icon = "fa-calendar")
-# 
-# })
+
 
 ```
 
+
+
+Row
+-----------------------------------------------------------------------
+
+### Total Downloads
+
+```{r}
+
+renderValueBox({
+
+downloads <- df %>% 
+  filter(package == input$packages_Ind&count>0) %>% 
+    summarize(tot=sum(count))
+
+valueBox(value = downloads$tot,
+icon = "fa-download")
+
+})
+
+
+
+```
+
+### Highest Rank
+
+```{r}
+
+renderValueBox({
+
+downloads <- df %>% 
+  filter(package == input$packages_Ind&count>0) %>% 
+    arrange(rank)
+
+valueBox(value = downloads$rank[1],
+icon = "fa-thumbs-up")
+
+})
+
+
+
+```
 
 Multiple Packages
 ===================================== 
