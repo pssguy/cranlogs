@@ -14,7 +14,7 @@ runtime: shiny
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(plotly)
-#library(readr)
+library(readr)
 #library(lubridate)
 #library(Lahman) - based on 2014 data so replaced byloading relevant files
 #library(XML)
@@ -24,61 +24,15 @@ library(plotly)
 library(feather)
 library(dplyr)
 
-print(getwd())
+
 df <- read_feather("data/allCranLogs.feather")
+print(glimpse(df))
+pkgs <- read_csv("data/packages.csv")
+
+(glimpse(pkgs))
 
 packageChoice <- sort(unique(df$package))
 
-
-```
-
-Multiple Packages
-===================================== 
-
-Inputs {.sidebar data-width=250}
--------------------------------------
-
-``` {r}
-includeMarkdown("info.md")
-hr()
-selectInput("packages_Mult","Select or Start Typing ",choices=packageChoice,selected=c("rbokeh","ggvis","plotly","iplots","rggobi","googlevis"), multiple=TRUE)
-
-```
-
-Column {data-width=650}
------------------------------------------------------------------------
-
-### Daily Downloads - Zoom as required and Hover for details
-
-```{r}
-
-
-renderPlotly({
-df %>% 
-  filter(package %in% input$packages_Mult) %>% 
-  plot_ly(x=date,y=count,mode="lines", color=package)  %>% 
-    layout(
-           xaxis=list(title=""),
-           yaxis=list(title=""
-           )
-    ) 
-})
-
-
-```
-
-Column {data-width=350}
------------------------------------------------------------------------
-
-### Chart B
-
-```{r}
-
-```
-
-### Chart C
-
-```{r}
 
 ```
 
@@ -105,9 +59,94 @@ Column {data-width=650}
 
 
 renderPlotly({
+  df %>%
+  filter(package == input$packages_Ind & count > 0) %>%
+  plot_ly(
+  x = date,
+  y = count,
+  mode = "markers",
+  color = "#00ffed",
+  hoverinfo = "text",
+  text = paste0(date, "<br> Rank: ", rank, "<br> Count: ", count)
+  )  %>%
+ 
+  layout(hovermode = "closest",
+             xaxis=list(title=""),
+             yaxis=list(title=" "
+             )
+  )
+  })
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Package
+
+```{r}
+
+renderText({
+  
+paste0(input$packages_Ind," - ",pkgs[pkgs$name==input$packages_Ind,]$description)
+  
+})
+
+```
+
+### Rank
+
+```{r}
+
+renderPlotly({
 df %>% 
-  filter(package %in% input$packages_Ind) %>% 
-  plot_ly(x=date,y=count,mode="lines", color=package)  %>% 
+  filter(package %in% input$packages_Ind&count>0) %>% 
+  plot_ly(x=date,y=rank,mode="markers", color=package)  %>% 
+    layout(
+           xaxis=list(title=""),
+           yaxis=list(autorange="reversed",title="")
+           
+    ) 
+})
+
+# renderValueBox({
+#   
+# req(glanceData())
+# 
+# valueBox(value = glanceData()$seasons,
+# icon = "fa-calendar")
+# 
+# })
+
+```
+
+
+Multiple Packages
+===================================== 
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
+
+``` {r}
+includeMarkdown("info.md")
+hr()
+selectInput("packages_Mult","Select or Start Typing ",choices=packageChoice,selected=c("rbokeh","ggvis","plotly","iplots","rggobi","googlevis"), multiple=TRUE)
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Daily Downloads - Zoom as required and Hover for details
+
+```{r}
+
+
+renderPlotly({
+df %>% 
+  filter(package %in% input$packages_Mult) %>% 
+  plot_ly(x=date,y=count,mode="markers", color=package)  %>% 
     layout(
            xaxis=list(title=""),
            yaxis=list(title=""
@@ -132,3 +171,4 @@ Column {data-width=350}
 ```{r}
 
 ```
+
