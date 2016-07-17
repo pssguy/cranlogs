@@ -1,0 +1,134 @@
+---
+title: "cranLogs"
+author: "myTinyShinys"
+output: 
+  flexdashboard::flex_dashboard:
+    
+    theme: united
+    orientation: rows
+    social: [ menu ]
+    source_code: embed
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+#library(readr)
+#library(lubridate)
+#library(Lahman) - based on 2014 data so replaced byloading relevant files
+#library(XML)
+#library(stringr)
+library(shiny)
+library(plotly)
+library(feather)
+library(dplyr)
+
+print(getwd())
+df <- read_feather("data/allCranLogs.feather")
+
+packageChoice <- sort(unique(df$package))
+
+
+```
+
+Multiple Packages
+===================================== 
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
+
+``` {r}
+includeMarkdown("info.md")
+hr()
+selectInput("packages_Mult","Select or Start Typing ",choices=packageChoice,selected=c("rbokeh","ggvis","plotly","iplots","rggobi","googlevis"), multiple=TRUE)
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Daily Downloads - Zoom as required and Hover for details
+
+```{r}
+
+
+renderPlotly({
+df %>% 
+  filter(package %in% input$packages_Mult) %>% 
+  plot_ly(x=date,y=count,mode="lines", color=package)  %>% 
+    layout(
+           xaxis=list(title=""),
+           yaxis=list(title=""
+           )
+    ) 
+})
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
+
+Individual Packages
+===================================== 
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
+
+``` {r}
+includeMarkdown("info.md")
+hr()
+selectInput("packages_Ind","Select",choices=packageChoice,selected="dplyr", multiple=FALSE, selectize=FALSE, size = 10)
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Daily Downloads 
+
+```{r}
+
+
+renderPlotly({
+df %>% 
+  filter(package %in% input$packages_Ind) %>% 
+  plot_ly(x=date,y=count,mode="lines", color=package)  %>% 
+    layout(
+           xaxis=list(title=""),
+           yaxis=list(title=""
+           )
+    ) 
+})
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
