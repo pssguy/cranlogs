@@ -7,7 +7,7 @@ output:
     theme: united
     orientation: rows
     social: [ menu ]
-    source_code: embed
+    # source_code: embed
 runtime: shiny
 ---
 
@@ -15,7 +15,7 @@ runtime: shiny
 library(flexdashboard)
 library(plotly)
 library(readr)
-
+library(DT)
 library(shiny)
 
 library(feather)
@@ -24,6 +24,7 @@ library(dplyr)
 # Import data
 df <- read_feather("data/allCranLogs.feather")
 pkgs <- read_csv("data/packages.csv")
+#newpkgs <- read_csv("data/newPackages.csv")
 
 # for use in selectInputs
 packageChoice <- pkgs$name
@@ -216,5 +217,74 @@ renderPlotly({
 
 
 ```
+
+New Packages
+===================================== 
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
+
+``` {r}
+includeMarkdown("new.md")
+hr()
+sliderInput("new","Select time scale in days",min=1,max=365,value=7)
+actionButton("go_new","Get Table")
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Click on Package for CRAN entry {-}
+
+```{r}
+
+output$newTable <- DT::renderDataTable({
+  req(input$go_new)
+  
+  newOnes <-  df %>%
+  group_by(package) %>%
+  summarize(launched = min(date, na.rm = T)) %>%
+  arrange(desc(launched)) %>%
+  filter(launched > Sys.Date() - input$new)  #33 good size # up to 166 if 30 days
+  #
+  newOnes %>%
+  left_join(df) %>%
+  group_by(package) %>%
+  summarize(avDowns = round(sum(count) / n(), 0),
+  minRank = min(rank, na.rm = TRUE)) %>%
+  inner_join(newOnes) %>%
+  left_join(pkgs, by = c("package" = "name")) %>%
+  arrange(desc(avDowns)) %>%
+  mutate(webUrl = paste0(
+  'https://cran.r-project.org/web/packages/',
+  package,
+  '/index.html'
+  )) %>%
+  mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
+  select(
+  Package = link,
+  Av_per_Day = avDowns,
+  Top_rank = minRank,
+  Released = launched,
+  Description = description
+  ) %>%
+  DT::datatable(
+  class = 'compact stripe hover row-border order-column',
+  rownames = TRUE,
+  escape = FALSE,
+  options = list(
+  paging = FALSE,
+  searching = TRUE,
+  info = FALSE
+  )
+  )
+  
+})
+
+dataTableOutput("newTable")
+
+```
+
 
 

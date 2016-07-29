@@ -1,4 +1,4 @@
-Bit late to the party, but using the [cranlogs package](https://github.com/metacran/cranlogs) to obtain daily download logs from the RStudio CRAN package mirror 
+Bit late to the party, but using the [cranlogs package](https://github.com/metacran/cranlogs) to obtain daily download logs from the RStudio CRAN package mirror since October 2012.
 
 Select from almost 9000 packages to view information. 
 
