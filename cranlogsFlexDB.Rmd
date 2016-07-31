@@ -52,7 +52,7 @@ choices = packageChoice,
 selected = "dplyr",
 multiple = FALSE,
 selectize = FALSE,
-size = 10
+size = 20
 )
 
 ```
@@ -191,20 +191,31 @@ Inputs {.sidebar data-width=250}
 includeMarkdown("info.md")
 hr()
 selectInput("packages_Mult","Select or Start Typing ",choices=packageChoice,selected=c("rbokeh","ggvis","plotly","iplots","rggobi","googlevis"), multiple=TRUE)
-
+actionButton("go_multiple","Get Tables")
 ```
 
-Column {data-width=650}
+Column {data-width=325}
 -----------------------------------------------------------------------
 
-### Daily Downloads - Zoom as required and Hover for details
+### Daily Downloads - Zoom as required and Hover for details. Toggle package in legend to hide/show
+
+```{r}
+
+data_multiple <- eventReactive(input$go_multiple,{
+  
+  df %>%
+  filter(package %in% input$packages_Mult)
+  
+})
+
+```
 
 ```{r}
 
 
 renderPlotly({
-  df %>%
-  filter(package %in% input$packages_Mult) %>%
+  
+  data_multiple() %>% 
   plot_ly(
   x = date,
   y = count,
@@ -213,6 +224,26 @@ renderPlotly({
   )  %>%
   layout(xaxis = list(title = ""),
   yaxis = list(title = ""))
+  })
+
+
+```
+
+Column {data-width=325}
+-----------------------------------------------------------------------
+
+### Cumulative Downloads
+
+```{r}
+
+
+renderPlotly({
+  
+   data_multiple() %>%
+    arrange(date) %>% 
+    group_by(package) %>% 
+    mutate(cum=cumsum(count)) %>% 
+    plot_ly(x=date,y=cum,mode="lines", color=package)
   })
 
 
