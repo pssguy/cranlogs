@@ -268,7 +268,7 @@ includeMarkdown("new.md")
 hr()
 sliderInput("new","Select time scale in days",min=1,max=365,value=7)
 actionButton("go_new","Get Table")
-(hr)
+hr()
 includeMarkdown("updated.md")
 ```
 
@@ -359,7 +359,7 @@ output$updatedTable <- DT::renderDataTable({
   escape = FALSE,
   options = list(
   paging = TRUE,
-  searching = FALSE,
+  searching = TRUE,
   info = FALSE
   )
   )
