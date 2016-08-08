@@ -24,6 +24,9 @@ library(dplyr)
 # Import data
 df <- read_feather("data/allCranLogs.feather")
 pkgs <- read_csv("data/packages.csv")
+updates <- read_csv("data/updates.csv")
+allByDay <- read_csv("data/allByDay.csv")
+print(glimpse(allByDay))
 #newpkgs <- read_csv("data/newPackages.csv")
 
 # for use in selectInputs
@@ -54,8 +57,13 @@ multiple = FALSE,
 selectize = FALSE,
 size = 20
 )
+hr()
 
 ```
+
+
+
+
 
 ``` {r data carpentry individual}
 
@@ -249,7 +257,7 @@ renderPlotly({
 
 ```
 
-New Packages
+New/Updated Packages
 ===================================== 
 
 Inputs {.sidebar data-width=250}
@@ -260,16 +268,19 @@ includeMarkdown("new.md")
 hr()
 sliderInput("new","Select time scale in days",min=1,max=365,value=7)
 actionButton("go_new","Get Table")
-
+(hr)
+includeMarkdown("updated.md")
 ```
 
-Column {data-width=650}
+Row
 -----------------------------------------------------------------------
 
-### Click on Package for CRAN entry {-}
+
+
+### Click on Package for CRAN entry 
 
 ```{r}
-
+##NB joins take a while - look at doing in daily update as data does not get any newer(but then not over varying spans which want)
 output$newTable <- DT::renderDataTable({
   req(input$go_new)
   
@@ -277,12 +288,13 @@ output$newTable <- DT::renderDataTable({
   group_by(package) %>%
   summarize(launched = min(date, na.rm = T)) %>%
   arrange(desc(launched)) %>%
-  filter(launched > Sys.Date() - input$new)  #33 good size # up to 166 if 30 days
-  #
+  filter(launched > Sys.Date() - input$new)  #input$new
+ 
+  
   newOnes %>%
   left_join(df) %>%
   group_by(package) %>%
-  summarize(avDowns = round(sum(count) / n(), 0),
+   summarize(avDowns = round(sum(count) / n(), 0),
   minRank = min(rank, na.rm = TRUE)) %>%
   inner_join(newOnes) %>%
   left_join(pkgs, by = c("package" = "name")) %>%
@@ -305,7 +317,7 @@ output$newTable <- DT::renderDataTable({
   rownames = TRUE,
   escape = FALSE,
   options = list(
-  paging = FALSE,
+  paging = TRUE,
   searching = TRUE,
   info = FALSE
   )
@@ -317,5 +329,112 @@ dataTableOutput("newTable")
 
 ```
 
+Row
+-----------------------------------------------------------------------
 
 
+### Updated 
+
+
+```{r}
+
+output$updatedTable <- DT::renderDataTable({
+  updates %>%
+  mutate(webUrl = paste0(
+  'https://cran.r-project.org/web/packages/',
+  package,
+  '/index.html'
+  )) %>%
+  mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
+  select(
+  Package = link,
+  Latest = count,
+  Rank = rank,
+  Updated = date,
+  Description 
+  ) %>%
+  DT::datatable(
+  class = 'compact stripe hover row-border order-column',
+  rownames = TRUE,
+  escape = FALSE,
+  options = list(
+  paging = TRUE,
+  searching = FALSE,
+  info = FALSE
+  )
+  )
+  
+  
+  
+  })
+  
+  dataTableOutput("updatedTable")
+  
+```
+
+
+
+
+
+
+
+Summarized Data
+===================================== 
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Overall Downloads 
+
+
+
+
+``` {r overall} 
+DT::renderDataTable({
+df %>%
+    group_by(package) %>%
+    summarize(tot=sum(count),mean=round(mean(count),0),max=max(count),top_rank=min(rank))%>%
+    arrange(desc(tot)) %>%
+   DT::datatable(class='compact stripe hover row-border order-column',rownames=TRUE,options= list(paging = TRUE, searching = TRUE,info=FALSE))
+})
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Cumulative and Daily Package downloads from RStudio 
+
+
+``` {r downloads by day}  
+
+renderPlotly({
+ df %>% 
+   group_by(date) %>% 
+   summarize(daily=sum(count)) %>% 
+   arrange(date) %>% 
+   mutate(tot=cumsum(daily))  %>% 
+   filter(date>="2012-11-01") %>% 
+   plot_ly(x=date,y=tot/100,markers="lines", name="Cumulative (100m)") %>% 
+   layout(title="",
+          xaxis=list(title=""),
+          yaxis=list(title="",rangemode="tozero")) %>% 
+   add_trace(x=date,y=daily,mode="bar",opacity=0.5, name="Daily Download")
+ 
+})
+
+```
+
+### Cumulative and New CRAN Packages downloaded from RStudio
+
+
+``` {r new packages by day}  
+
+allByDay %>% 
+    plot_ly(x=date,y=tot/1000,markers="lines", name="Cumulative ('000") %>% 
+   layout(title="",
+          xaxis=list(title=""),
+          yaxis=list(title="Total Packages",rangemode="tozero")) %>% 
+   add_trace(x=date,y=n,mode="bar",opacity=0.5, name="New daily")
+
+```
