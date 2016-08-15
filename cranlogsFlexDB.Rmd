@@ -37,6 +37,122 @@ packageChoice <- pkgs$name
 ```
 
 
+New/Updated Packages
+===================================== 
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
+
+``` {r}
+includeMarkdown("new.md")
+hr()
+sliderInput("new","Select time scale in days",min=1,max=365,value=7)
+#actionButton("go_new","Get Table")
+hr()
+includeMarkdown("updated.md")
+```
+
+Row
+-----------------------------------------------------------------------
+
+
+
+### Click on Package for CRAN entry 
+
+```{r}
+##NB joins take a while - look at doing in daily update as data does not get any newer(but then not over varying spans which want)
+output$newTable <- DT::renderDataTable({
+
+  newOnes <-  df %>%
+  group_by(package) %>%
+  summarize(launched = min(date, na.rm = T)) %>%
+  arrange(desc(launched)) %>%
+  filter(launched > Sys.Date() - input$new)  #input$new
+ 
+  
+  newOnes %>%
+  left_join(df) %>%
+  group_by(package) %>%
+   summarize(avDowns = round(sum(count) / n(), 0),
+  minRank = min(rank, na.rm = TRUE)) %>%
+  inner_join(newOnes) %>%
+  left_join(pkgs, by = c("package" = "name")) %>%
+  arrange(desc(avDowns)) %>%
+  mutate(webUrl = paste0(
+  'https://cran.r-project.org/web/packages/',
+  package,
+  '/index.html'
+  )) %>%
+  mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
+  select(
+  Package = link,
+  Av_per_Day = avDowns,
+  Top_rank = minRank,
+  Released = launched,
+  Description = description
+  ) %>%
+  DT::datatable(
+  class = 'compact stripe hover row-border order-column',
+  rownames = TRUE,
+  escape = FALSE,
+  options = list(
+  paging = TRUE,
+  searching = TRUE,
+  info = FALSE
+  )
+  )
+  
+})
+
+dataTableOutput("newTable")
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+
+### Updated 
+
+
+```{r}
+
+output$updatedTable <- DT::renderDataTable({
+  updates %>%
+  mutate(webUrl = paste0(
+  'https://cran.r-project.org/web/packages/',
+  package,
+  '/index.html'
+  )) %>%
+  mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
+  select(
+  Package = link,
+  Latest = count,
+  Rank = rank,
+  Updated = date,
+  Description 
+  ) %>%
+  DT::datatable(
+  class = 'compact stripe hover row-border order-column',
+  rownames = TRUE,
+  escape = FALSE,
+  options = list(
+  paging = TRUE,
+  searching = TRUE,
+  info = FALSE
+  )
+  )
+  
+  
+  
+  })
+  
+  dataTableOutput("updatedTable")
+  
+```
+
+
+
 Individual Packages
 ===================================== 
 
@@ -47,12 +163,21 @@ Inputs {.sidebar data-width=250}
 # some background
 includeMarkdown("info.md")
 hr()
+
+# select a default from top 50 current packages
+default <-df %>% 
+  filter(date==max(date)) %>% 
+  arrange(desc(count)) %>% 
+  head(50) %>% 
+  .$package %>% 
+  sample(1)
+
 # interactive
 selectInput(
 "packages_Ind",
-"Select (default dplyr)",
+"Select (default random top 50 package)",
 choices = packageChoice,
-selected = "dplyr",
+selected = default,
 multiple = FALSE,
 selectize = FALSE,
 size = 20
@@ -256,123 +381,6 @@ renderPlotly({
 
 
 ```
-
-New/Updated Packages
-===================================== 
-
-Inputs {.sidebar data-width=250}
--------------------------------------
-
-``` {r}
-includeMarkdown("new.md")
-hr()
-sliderInput("new","Select time scale in days",min=1,max=365,value=7)
-actionButton("go_new","Get Table")
-hr()
-includeMarkdown("updated.md")
-```
-
-Row
------------------------------------------------------------------------
-
-
-
-### Click on Package for CRAN entry 
-
-```{r}
-##NB joins take a while - look at doing in daily update as data does not get any newer(but then not over varying spans which want)
-output$newTable <- DT::renderDataTable({
-  req(input$go_new)
-  
-  newOnes <-  df %>%
-  group_by(package) %>%
-  summarize(launched = min(date, na.rm = T)) %>%
-  arrange(desc(launched)) %>%
-  filter(launched > Sys.Date() - input$new)  #input$new
- 
-  
-  newOnes %>%
-  left_join(df) %>%
-  group_by(package) %>%
-   summarize(avDowns = round(sum(count) / n(), 0),
-  minRank = min(rank, na.rm = TRUE)) %>%
-  inner_join(newOnes) %>%
-  left_join(pkgs, by = c("package" = "name")) %>%
-  arrange(desc(avDowns)) %>%
-  mutate(webUrl = paste0(
-  'https://cran.r-project.org/web/packages/',
-  package,
-  '/index.html'
-  )) %>%
-  mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
-  select(
-  Package = link,
-  Av_per_Day = avDowns,
-  Top_rank = minRank,
-  Released = launched,
-  Description = description
-  ) %>%
-  DT::datatable(
-  class = 'compact stripe hover row-border order-column',
-  rownames = TRUE,
-  escape = FALSE,
-  options = list(
-  paging = TRUE,
-  searching = TRUE,
-  info = FALSE
-  )
-  )
-  
-})
-
-dataTableOutput("newTable")
-
-```
-
-Row
------------------------------------------------------------------------
-
-
-### Updated 
-
-
-```{r}
-
-output$updatedTable <- DT::renderDataTable({
-  updates %>%
-  mutate(webUrl = paste0(
-  'https://cran.r-project.org/web/packages/',
-  package,
-  '/index.html'
-  )) %>%
-  mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
-  select(
-  Package = link,
-  Latest = count,
-  Rank = rank,
-  Updated = date,
-  Description 
-  ) %>%
-  DT::datatable(
-  class = 'compact stripe hover row-border order-column',
-  rownames = TRUE,
-  escape = FALSE,
-  options = list(
-  paging = TRUE,
-  searching = TRUE,
-  info = FALSE
-  )
-  )
-  
-  
-  
-  })
-  
-  dataTableOutput("updatedTable")
-  
-```
-
-
 
 
 
