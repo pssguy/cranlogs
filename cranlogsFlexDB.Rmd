@@ -238,14 +238,19 @@ Row
 
 
 renderPlotly({
-  indData()$data %>%
+  
+  
+  df<- indData()$data 
+  
+ df %>%
   plot_ly(
-  x = date,
-  y = count,
-  mode = "markers",
+  x = ~date,
+  y = ~count,
+
+ type="scatter",
   marker = list(color = "#007bff", size = 3),
   hoverinfo = "text",
-  text = paste0(date, "<br> Count: ", count, "<br> Rank: ", rank)
+  text = paste0(df$date, "<br> Count: ", df$count, "<br> Rank: ", df$rank)
   )  %>%
   
   layout(
@@ -264,14 +269,17 @@ renderPlotly({
 ```{r}
 
 renderPlotly({
-  indData()$data %>%
+  df <- indData()$data
+  
+ df  %>%
   plot_ly(
-  x = date,
-  y = rank,
-  mode = "markers",
+  x = ~date,
+  y = ~rank,
+  #mode = "markers",
+  type="scatter",
   marker = list(color = "#ff9000", size = 3),
   hoverinfo = "text",
-  text = paste0(date, "<br> Rank: ", rank, "<br> Count: ", count)
+  text = paste0(df$date, "<br> Rank: ", df$rank, "<br> Count: ", df$count)
   )  %>%
   layout(xaxis = list(title = ""),
   yaxis = list(autorange = "reversed", title = ""))
@@ -350,10 +358,11 @@ renderPlotly({
   
   data_multiple() %>% 
   plot_ly(
-  x = date,
-  y = count,
-  mode = "markers",
-  color = package
+  x = ~date,
+  y = ~count,
+  #mode = "markers",
+  type="scatter",
+  color = ~package
   )  %>%
   layout(xaxis = list(title = ""),
   yaxis = list(title = ""))
@@ -376,7 +385,7 @@ renderPlotly({
     arrange(date) %>% 
     group_by(package) %>% 
     mutate(cum=cumsum(count)) %>% 
-    plot_ly(x=date,y=cum,mode="lines", color=package)
+    plot_ly(x=~date,y=~cum,mode="lines", color=~package)
   })
 
 
@@ -418,16 +427,17 @@ Column {data-width=650}
 
 renderPlotly({
  df %>% 
-   group_by(date) %>% 
-   summarize(daily=sum(count)) %>% 
-   arrange(date) %>% 
-   mutate(tot=cumsum(daily))  %>% 
-   filter(date>="2012-11-01") %>% 
-   plot_ly(x=date,y=tot/100,markers="lines", name="Cumulative (100m)") %>% 
-   layout(title="",
-          xaxis=list(title=""),
-          yaxis=list(title="",rangemode="tozero")) %>% 
-   add_trace(x=date,y=daily,mode="bar",opacity=0.5, name="Daily Download")
+  group_by(date) %>% 
+  summarize(daily=sum(count)) %>% 
+  arrange(date) %>% 
+  mutate(tot=cumsum(daily))  %>% 
+  filter(date>="2012-11-01") %>% 
+  plot_ly(x=~date,y=~tot/100, name="Cumulative (100m)") %>% 
+  add_lines(line = list(color = "red")) %>% 
+  layout(title="",
+         xaxis=list(title=""),
+         yaxis=list(title="",rangemode="tozero")) %>% 
+  add_bars(x=~date,y=~daily,opacity=0.5, name="Daily Download")
  
 })
 
@@ -439,10 +449,11 @@ renderPlotly({
 ``` {r new packages by day}  
 
 allByDay %>% 
-    plot_ly(x=date,y=tot/1000,markers="lines", name="Cumulative ('000") %>% 
-   layout(title="",
-          xaxis=list(title=""),
-          yaxis=list(title="Total Packages",rangemode="tozero")) %>% 
-   add_trace(x=date,y=n,mode="bar",opacity=0.5, name="New daily")
+  plot_ly(x=~date,y=~tot/1000, name="Cumulative ('000)") %>% 
+  add_lines(line = list(color = "red")) %>% 
+  layout(title="",
+         xaxis=list(title=""),
+         yaxis=list(title="Total Packages",rangemode="tozero")) %>% 
+  add_bars(x=~date,y=~n,opacity=0.5, name="New daily")
 
 ```
