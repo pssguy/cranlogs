@@ -22,7 +22,8 @@ library(feather)
 library(dplyr)
 
 # Import data
-df <- read_feather("data/allCranLogs.feather")
+#df <- read_feather("data/allCranLogsBU.feather") # one-off
+ df <- read_feather("data/allCranLogs.feather")
 pkgs <- read_csv("data/packages.csv")
 updates <- read_csv("data/updates.csv")
 allByDay <- read_csv("data/allByDay.csv")
@@ -57,7 +58,7 @@ Row
 
 
 
-### Click on Package for CRAN entry 
+### New Packages - click on Package for CRAN entry information 
 
 ```{r}
 ##NB joins take a while - look at doing in daily update as data does not get any newer(but then not over varying spans which want)
@@ -91,6 +92,7 @@ output$newTable <- DT::renderDataTable({
   Released = launched,
   Description = description
   ) %>%
+    arrange(desc(Released)) %>% 
   DT::datatable(
   class = 'compact stripe hover row-border order-column',
   rownames = TRUE,
@@ -131,7 +133,8 @@ output$updatedTable <- DT::renderDataTable({
   Rank = rank,
   Updated,
   Description 
-  ) %>%
+  )   %>%
+    arrange(desc(Updated)) %>%
   DT::datatable(
   class = 'compact stripe hover row-border order-column',
   rownames = TRUE,
