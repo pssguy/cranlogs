@@ -411,9 +411,19 @@ Column {data-width=650}
 
 ``` {r overall} 
 DT::renderDataTable({
+# df %>%
+#     group_by(package) %>%
+#     summarize(tot=sum(count),mean=round(mean(count),0),max=max(count),top_rank=min(rank))%>%
+#     filter(package!="NA") %>% 
+#     arrange(desc(tot)) %>%
+#    DT::datatable(class='compact stripe hover row-border order-column',rownames=TRUE,options= list(paging = TRUE, searching = TRUE,info=FALSE))
+  
 df %>%
     group_by(package) %>%
-    summarize(tot=sum(count),mean=round(mean(count),0),max=max(count),top_rank=min(rank))%>%
+     filter(date>"2012-10-30") %>% 
+     mutate(top=ifelse(rank==1,1,0)) %>% 
+    summarize(tot=sum(count),mean=round(mean(count),0),max=max(count),top_rank=min(rank),days_top=sum(top)) %>%
+    filter(package!="NA") %>%
     arrange(desc(tot)) %>%
    DT::datatable(class='compact stripe hover row-border order-column',rownames=TRUE,options= list(paging = TRUE, searching = TRUE,info=FALSE))
 })
