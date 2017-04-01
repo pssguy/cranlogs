@@ -22,17 +22,18 @@ library(feather)
 library(dplyr)
 
 # Import data
-#df <- read_feather("data/allCranLogsBU.feather") # one-off
- df <- read_feather("data/allCranLogs.feather")
+
+ 
+
+# for use in selectInputs
+
+df <- read_feather("data/allCranLogs.feather")
 pkgs <- read_csv("data/packages.csv")
 updates <- read_csv("data/updates.csv")
 allByDay <- read_csv("data/allByDay.csv")
-print(glimpse(allByDay))
-#newpkgs <- read_csv("data/newPackages.csv")
+#print(glimpse(allByDay))
 
-# for use in selectInputs
 packageChoice <- pkgs$name
-
 
 
 ```
@@ -62,15 +63,86 @@ Row
 
 ```{r}
 ##NB joins take a while - look at doing in daily update as data does not get any newer(but then not over varying spans which want)
+
+## split into reactive didnt make diff - appears OK
+
+# newData <- reactive({
+# 
+#   print("enter reactive")
+# 
+#     newOnes <-  df %>%
+#   group_by(package) %>%
+#   summarize(launched = min(date, na.rm = T)) %>%
+#   arrange(desc(launched)) %>%
+#  # filter(launched > Sys.Date() - input$new)  #input$new  #
+#   filter(launched > Sys.Date() - 7) #test - usually the packages a re not updated immediately on CRAN? re do
+# 
+#   newOnes %>%
+#   left_join(df) %>%
+#   group_by(package) %>%
+#    summarize(avDowns = round(sum(count) / n(), 0),
+#   minRank = min(rank, na.rm = TRUE)) %>%
+#   inner_join(newOnes) %>%
+#   left_join(pkgs, by = c("package" = "name")) %>%
+#   arrange(desc(avDowns)) %>%
+#   mutate(webUrl = paste0(
+#   'https://cran.r-project.org/web/packages/',
+#   package,
+#   '/index.html'
+#   )) %>%
+#   mutate(link = paste0("<a href=\"", webUrl, "\" target=\"_blank\">", package, "</a>")) %>%
+#   select(
+#   Package = link,
+#   Av_per_Day = avDowns,
+#   Top_rank = minRank,
+#   Released = launched,
+#   Description = description
+#   ) %>%
+#     arrange(desc(Released))
+# })
+# 
+# 
+# output$newTable <- DT::renderDataTable({
+# 
+#   print("enter newTable")
+# 
+#   print(newData())
+# 
+#   newData() %>%
+#   DT::datatable(
+#   class = 'compact stripe hover row-border order-column',
+#   rownames = TRUE,
+#   escape = FALSE,
+#   options = list(
+#      deferRender = TRUE,
+#   scrollY = 200,
+#   scroller = TRUE,
+#   pageLength = 10,
+#   lengthMenu = c(5, 10, 15, 20),
+#   paging = TRUE,
+#   searching = TRUE,
+#   info = FALSE
+#   )
+#   )
+# 
+# })
+# 
+# dataTableOutput("newTable")
+
+```
+
+
+```{r}
+##NB joins take a while - look at doing in daily update as data does not get any newer(but then not over varying spans which want)
 output$newTable <- DT::renderDataTable({
 
   newOnes <-  df %>%
   group_by(package) %>%
   summarize(launched = min(date, na.rm = T)) %>%
   arrange(desc(launched)) %>%
-  filter(launched > Sys.Date() - input$new)  #input$new
- 
-  
+  filter(launched > Sys.Date() - input$new)  #input$new  #
+ # filter(launched > Sys.Date() - 7) #test - usually the packages a re not updated immediately on CRAN? re do
+
   newOnes %>%
   left_join(df) %>%
   group_by(package) %>%
@@ -92,23 +164,30 @@ output$newTable <- DT::renderDataTable({
   Released = launched,
   Description = description
   ) %>%
-    arrange(desc(Released)) %>% 
+    arrange(desc(Released)) %>%
   DT::datatable(
   class = 'compact stripe hover row-border order-column',
   rownames = TRUE,
   escape = FALSE,
   options = list(
+     deferRender = TRUE,
+  scrollY = 200,
+  scroller = TRUE,
+  pageLength = 10,
+  lengthMenu = c(5, 10, 15, 20),
   paging = TRUE,
   searching = TRUE,
   info = FALSE
   )
   )
-  
+
 })
 
 dataTableOutput("newTable")
 
 ```
+
+
 
 Row
 -----------------------------------------------------------------------
@@ -132,7 +211,7 @@ output$updatedTable <- DT::renderDataTable({
   Latest = count,
   Rank = rank,
   Updated,
-  Description 
+  Description
   )   %>%
     arrange(desc(Updated)) %>%
   DT::datatable(
@@ -140,18 +219,20 @@ output$updatedTable <- DT::renderDataTable({
   rownames = TRUE,
   escape = FALSE,
   options = list(
+    pageLength = 10,
+  lengthMenu = c(5, 10, 15, 20),
   paging = TRUE,
   searching = TRUE,
   info = FALSE
   )
   )
-  
-  
-  
+
+
+
   })
-  
+
   dataTableOutput("updatedTable")
-  
+
 ```
 
 
@@ -168,11 +249,11 @@ includeMarkdown("info.md")
 hr()
 
 # select a default from top 50 current packages
-default <-df %>% 
-  filter(date==max(date)) %>% 
-  arrange(desc(count)) %>% 
-  head(50) %>% 
-  .$package %>% 
+default <-df %>%
+  filter(date==max(date)) %>%
+  arrange(desc(count)) %>%
+  head(50) %>%
+  .$package %>%
   sample(1)
 
 # interactive
@@ -206,7 +287,7 @@ summarize(tot = sum(count))
 
 info = list(data = data, downloads = downloads)
 return(info)
-  
+
 })
 
 ```
@@ -221,10 +302,10 @@ Row
 renderValueBox({
   val <-
   paste0(input$packages_Ind, " - ", pkgs[pkgs$name == input$packages_Ind, ]$description)
-  
+
   valueBox(value = val,
   icon = "fa-book")
-  
+
   })
 
 
@@ -241,10 +322,10 @@ Row
 
 
 renderPlotly({
-  
-  
-  df<- indData()$data 
-  
+
+
+  df<- indData()$data
+
  df %>%
   plot_ly(
   x = ~date,
@@ -255,7 +336,7 @@ renderPlotly({
   hoverinfo = "text",
   text = paste0(df$date, "<br> Count: ", df$count, "<br> Rank: ", df$rank)
   )  %>%
-  
+
   layout(
   hovermode = "closest",
   xaxis = list(title = ""),
@@ -273,7 +354,7 @@ renderPlotly({
 
 renderPlotly({
   df <- indData()$data
-  
+
  df  %>%
   plot_ly(
   x = ~date,
@@ -287,7 +368,7 @@ renderPlotly({
   layout(xaxis = list(title = ""),
   yaxis = list(autorange = "reversed", title = ""))
   })
-  
+
 
 
 ```
@@ -304,7 +385,7 @@ Row
 renderValueBox({
   valueBox(value = format(indData()$downloads$tot, big.mark = ","),
   icon = "fa-download")
-  
+
   })
 
 
@@ -318,7 +399,7 @@ renderValueBox({
 renderValueBox({
   valueBox(value = format(indData()$data$rank[1], big.mark = ","),
   icon = "fa-thumbs-up")
-  
+
   })
 
 
@@ -345,12 +426,12 @@ Column {data-width=325}
 
 ```{r}
 
-data_multiple <- eventReactive(input$go_multiple,{
-  
-  df %>%
-  filter(package %in% input$packages_Mult)
-  
-})
+ data_multiple <- eventReactive(input$go_multiple,{
+
+   df %>%
+   filter(package %in% input$packages_Mult)
+
+ })
 
 ```
 
@@ -358,8 +439,8 @@ data_multiple <- eventReactive(input$go_multiple,{
 
 
 renderPlotly({
-  
-  data_multiple() %>% 
+
+  data_multiple() %>%
   plot_ly(
   x = ~date,
   y = ~count,
@@ -383,11 +464,11 @@ Column {data-width=325}
 
 
 renderPlotly({
-  
+
    data_multiple() %>%
-    arrange(date) %>% 
-    group_by(package) %>% 
-    mutate(cum=cumsum(count)) %>% 
+    arrange(date) %>%
+    group_by(package) %>%
+    mutate(cum=cumsum(count)) %>%
     plot_ly(x=~date,y=~cum,mode="lines", color=~package)
   })
 
@@ -409,13 +490,13 @@ Column {data-width=650}
 
 
 
-``` {r overall} 
+```{r overall} 
 DT::renderDataTable({
 
 df %>%
     group_by(package) %>%
-     filter(date>"2012-10-30") %>% 
-     mutate(top=ifelse(rank==1,1,0)) %>% 
+     filter(date>"2012-10-30") %>%
+     mutate(top=ifelse(rank==1,1,0)) %>%
     summarize(tot=sum(count),mean=round(mean(count),0),max=max(count),top_rank=min(rank),days_top=sum(top)) %>%
     filter(package!="NA") %>%
     arrange(desc(tot)) %>%
@@ -430,37 +511,39 @@ Column {data-width=650}
 ### Cumulative and Daily Package downloads from RStudio 
 
 
-``` {r downloads by day}  
+```{r downloads by day}  
 
 renderPlotly({
- df %>% 
-  group_by(date) %>% 
-  summarize(daily=sum(count)) %>% 
-  arrange(date) %>% 
-  mutate(tot=cumsum(daily))  %>% 
-  filter(date>="2012-11-01") %>% 
-  plot_ly(x=~date,y=~tot/100, name="Cumulative (100m)") %>% 
-  add_lines(line = list(color = "red")) %>% 
+ df %>%
+  group_by(date) %>%
+  summarize(daily=sum(count)) %>%
+  arrange(date) %>%
+  mutate(tot=cumsum(daily))  %>%
+  filter(date>="2012-11-01") %>%
+  plot_ly(x=~date,y=~tot/100, name="Cumulative (100m)") %>%
+  add_lines(line = list(color = "red")) %>%
   layout(title="",
          xaxis=list(title=""),
-         yaxis=list(title="",rangemode="tozero")) %>% 
+         yaxis=list(title="",rangemode="tozero")) %>%
   add_bars(x=~date,y=~daily,opacity=0.5, name="Daily Download")
- 
+
 })
 
 ```
 
-### Cumulative and New CRAN Packages downloaded from RStudio
+### Cumulative and New CRAN Packages downloaded from RStudio 
 
 
-``` {r new packages by day}  
+```{r new packages by day}  
 
-allByDay %>% 
-  plot_ly(x=~date,y=~tot/1000, name="Cumulative ('000)") %>% 
-  add_lines(line = list(color = "red")) %>% 
+
+renderPlotly({
+allByDay %>%
+  plot_ly(x=~date,y=~tot/1000, name="Cumulative ('000)") %>%
+  add_lines(line = list(color = "red")) %>%
   layout(title="",
          xaxis=list(title=""),
-         yaxis=list(title="Total Packages",rangemode="tozero")) %>% 
+         yaxis=list(title="Total Packages",rangemode="tozero")) %>%
   add_bars(x=~date,y=~n,opacity=0.5, name="New daily")
-
+})
 ```
